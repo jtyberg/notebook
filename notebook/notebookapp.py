@@ -56,7 +56,7 @@ from notebook import (
 )
 from .base.handlers import Template404
 from .log import log_request
-from .services.kernels.kernelmanager import MappingKernelManager
+from .services.kernels.kernelmanager import MappingKernelManager, RemoteKernelManager
 from .services.config import ConfigManager
 from .services.contents.manager import ContentsManager
 from .services.contents.filemanager import FileContentsManager
@@ -372,7 +372,7 @@ class NotebookApp(JupyterApp):
     flags = flags
     
     classes = [
-        KernelManager, Session, MappingKernelManager,
+        KernelManager, Session, MappingKernelManager, RemoteKernelManager,
         ContentsManager, FileContentsManager, NotebookNotary,
         KernelSpecManager,
     ]

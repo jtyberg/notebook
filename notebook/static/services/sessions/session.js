@@ -102,7 +102,13 @@ define([
             if (that.kernel) {
                 that.kernel.name = that.kernel_model.name;
             } else {
+                // TODO: kernel_service_url may not be same as base_url when using remote kernels.
+                // There is currently no option on notebook application to specify kernel URL.
+                // For now, if ws_url is provided, let's use same host for kernel_service_url.
                 var kernel_service_url = utils.url_path_join(that.base_url, "api/kernels");
+                if (that.ws_url) {
+                    kernel_service_url = that.ws_url.replace('ws', 'http') + kernel_service_url;
+                }
                 that.kernel = new kernel.Kernel(kernel_service_url, that.ws_url, that.kernel_model.name);
             }
             that.events.trigger('kernel_created.Session', {session: that, kernel: that.kernel});

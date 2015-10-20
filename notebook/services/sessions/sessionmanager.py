@@ -15,7 +15,7 @@ from traitlets import Instance
 
 class SessionManager(LoggingConfigurable):
 
-    kernel_manager = Instance('notebook.services.kernels.kernelmanager.MappingKernelManager')
+    kernel_manager = Instance('notebook.services.kernels.kernelmanager.RemoteKernelManager')
     contents_manager = Instance('notebook.services.contents.manager.ContentsManager')
     
     # Session database initialized below

@@ -57,16 +57,17 @@ RUN curl -L https://github.com/krallin/tini/releases/download/v0.6.0/tini > tini
 RUN curl -O https://bootstrap.pypa.io/get-pip.py && \
     python2 get-pip.py && \
     python3 get-pip.py && \
-    rm get-pip.py && \
-    pip2 --no-cache-dir install requests[security] && \
-    pip3 --no-cache-dir install requests[security]
+    rm get-pip.py
 
 # Install some dependencies.
 RUN pip2 --no-cache-dir install ipykernel && \
     pip3 --no-cache-dir install ipykernel && \
     \
     python2 -m ipykernel.kernelspec && \
-    python3 -m ipykernel.kernelspec
+    python3 -m ipykernel.kernelspec && \
+    \
+    pip2 --no-cache-dir install requests && \
+    pip3 --no-cache-dir install requests
 
 # Move notebook contents into place.
 ADD . /usr/src/jupyter-notebook
@@ -84,13 +85,13 @@ RUN BUILD_DEPS="nodejs-legacy npm" && \
         -o APT::AutoRemove::RecommendsImportant=false -o APT::AutoRemove::SuggestsImportant=false $BUILD_DEPS
 
 # Run tests.
-RUN pip2 install --no-cache-dir mock nose requests testpath && \
-    pip3 install --no-cache-dir nose requests testpath && \
+RUN pip2 install --no-cache-dir mock nose testpath && \
+    pip3 install --no-cache-dir nose testpath && \
     \
     iptest2 && iptest3 && \
     \
-    pip2 uninstall -y funcsigs mock nose pbr requests six testpath && \
-    pip3 uninstall -y nose requests testpath
+    pip2 uninstall -y funcsigs mock nose pbr six testpath && \
+    pip3 uninstall -y nose testpath
 
 # Add a notebook profile.
 RUN mkdir -p -m 700 /root/.jupyter/ && \

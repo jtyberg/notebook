@@ -65,6 +65,20 @@ define([
         this.reconnect_limit = 7;
     };
 
+    // TODO: kernel_service_url and kernel_url are assumed to be the same
+    // host as notebook server, but this may not be true.
+    Kernel.prototype._get_kernel_url = function(path) {
+        var url = utils.parse_url(this.kernel_url);
+        return [url.protocol, '//', url.host,
+            utils.url_path_join(url.pathname, path), url.hash].join('');
+    };
+
+    Kernel.prototype._get_kernel_service_url = function(path) {
+        var url = utils.parse_url(this.kernel_service_url);
+        return [url.protocol, '//', url.host,
+            utils.url_path_join(url.pathname, path), url.hash].join('');
+    };
+
     /**
      * @function _get_msg
      */
@@ -274,7 +288,7 @@ define([
             }
         };
 
-        var url = utils.url_path_join(this.kernel_url, 'interrupt');
+        var url = this._get_kernel_url('interrupt');
         $.ajax(url, {
             processData: false,
             cache: false,
@@ -316,7 +330,7 @@ define([
             }
         };
 
-        var url = utils.url_path_join(this.kernel_url, 'restart');
+        var url = this._get_kernel_url('restart');
         $.ajax(url, {
             processData: false,
             cache: false,
@@ -362,8 +376,7 @@ define([
                 that.id = data.id;
                 that.name = data.name;
             }
-            that.kernel_url = utils.url_path_join(that.kernel_service_url,
-                encodeURIComponent(that.id));
+            that.kernel_url = that._get_kernel_service_url(encodeURIComponent(that.id));
             if (success) {
                 success(data, status, xhr);
             }
@@ -395,8 +408,7 @@ define([
          * @param {Object} data - information about the kernel including id
          */
         this.id = data.id;
-        this.kernel_url = utils.url_path_join(this.kernel_service_url,
-            encodeURIComponent(this.id));
+        this.kernel_url = this._get_kernel_service_url(encodeURIComponent(this.id));
         this.start_channels();
     };
 
@@ -437,13 +449,13 @@ define([
          */
         var that = this;
         this.stop_channels();
-        var ws_host_url = this.ws_url + this.kernel_url;
+        var ws_host_url = this.ws_url + utils.parse_url(this.kernel_url).pathname;
 
         console.log("Starting WebSockets:", ws_host_url);
         
         this.ws = new this.WebSocket([
                 that.ws_url,
-                utils.url_path_join(that.kernel_url, 'channels'),
+                utils.url_path_join(utils.parse_url(that.kernel_url).pathname, 'channels'),
                 "?session_id=" + that.session_id
             ].join('')
         );
