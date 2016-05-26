@@ -45,7 +45,7 @@ class MainKernelHandler(APIHandler):
             model.setdefault('name', km.default_kernel_name)
 
         kernel_id = yield gen.maybe_future(km.start_kernel(kernel_name=model['name']))
-        model = yield gen.maybe_future(km.kernel_model(kernel_id))
+        model = km.kernel_model(kernel_id)
         location = url_path_join(self.base_url, 'api', 'kernels', url_escape(kernel_id))
         self.set_header('Location', location)
         self.set_status(201)
@@ -56,11 +56,10 @@ class KernelHandler(APIHandler):
 
     @web.authenticated
     @json_errors
-    @gen.coroutine
     def get(self, kernel_id):
         km = self.kernel_manager
         km._check_kernel_id(kernel_id)
-        model = yield gen.maybe_future(km.kernel_model(kernel_id))
+        model = km.kernel_model(kernel_id)
         self.finish(json.dumps(model))
 
     @web.authenticated
@@ -91,7 +90,7 @@ class KernelActionHandler(APIHandler):
                 self.log.error("Exception restarting kernel", exc_info=True)
                 self.set_status(500)
             else:
-                model = yield gen.maybe_future(km.kernel_model(kernel_id))
+                model = km.kernel_model(kernel_id)
                 self.write(json.dumps(model))
         self.finish()
 
@@ -383,7 +382,6 @@ class ZMQChannelsHandler(AuthenticatedZMQStreamHandler):
         if self._open_sessions.get(self.session_key) is self:
             self._open_sessions.pop(self.session_key)
         km = self.kernel_manager
-        # TODO: FIXME kernel_id in kernel_manager
         if self.kernel_id in km:
             km.remove_restart_callback(
                 self.kernel_id, self.on_kernel_restarted,

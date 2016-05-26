@@ -72,7 +72,6 @@ class SessionManager(LoggingConfigurable):
     def create_session(self, path=None, kernel_name=None, kernel_id=None):
         """Creates a session and returns its model"""
         session_id = self.new_session_id()
-        # TODO: FIXME kernel_id in kernel_manager
         if kernel_id is not None and kernel_id in self.kernel_manager:
             pass
         else:
@@ -95,7 +94,6 @@ class SessionManager(LoggingConfigurable):
         # py2-compat
         raise gen.Return(kernel_id)
 
-    @gen.coroutine
     def save_session(self, session_id, path=None, kernel_id=None):
         """Saves the items for the session with the given session_id
         
@@ -120,16 +118,14 @@ class SessionManager(LoggingConfigurable):
         self.cursor.execute("INSERT INTO session VALUES (?,?,?)",
             (session_id, path, kernel_id)
         )
-        session = yield self.get_session(session_id=session_id)
-        raise gen.Return(session)
+        return self.get_session(session_id=session_id)
 
-    @gen.coroutine
     def get_session(self, **kwargs):
         """Returns the model for a particular session.
         
         Takes a keyword argument and searches for the value in the session
         database, then returns the rest of the session's info.
-        
+
         Parameters
         ----------
         **kwargs : keyword argument
@@ -167,10 +163,8 @@ class SessionManager(LoggingConfigurable):
 
             raise web.HTTPError(404, u'Session not found: %s' % (', '.join(q)))
 
-        model = yield self.row_to_model(row)
-        raise gen.Return(model)
+        return self.row_to_model(row)
 
-    @gen.coroutine
     def update_session(self, session_id, **kwargs):
         """Updates the values in the session database.
         
@@ -186,7 +180,7 @@ class SessionManager(LoggingConfigurable):
             and the value replaces the current value in the session 
             with session_id.
         """
-        session = yield self.get_session(session_id=session_id)
+        self.get_session(session_id=session_id)
 
         if not kwargs:
             # no changes
@@ -200,10 +194,8 @@ class SessionManager(LoggingConfigurable):
         query = "UPDATE session SET %s WHERE session_id=?" % (', '.join(sets))
         self.cursor.execute(query, list(kwargs.values()) + [session_id])
 
-    @gen.coroutine
     def row_to_model(self, row):
         """Takes sqlite database session row and turns it into a dictionary"""
-        # TODO: FIXME kernel_id in kernel_manager
         if row['kernel_id'] not in self.kernel_manager:
             # The kernel was killed or died without deleting the session.
             # We can't use delete_session here because that tries to find
@@ -212,19 +204,15 @@ class SessionManager(LoggingConfigurable):
                                 (row['session_id'],))
             raise KeyError
 
-        kernel_model = yield gen.maybe_future(
-            self.kernel_manager.get_kernel(row['kernel_id']))
         model = {
             'id': row['session_id'],
             'notebook': {
                 'path': row['path']
             },
-            # 'kernel': self.kernel_manager.kernel_model(row['kernel_id'])
-            'kernel': kernel_model
+            'kernel': self.kernel_manager.kernel_model(row['kernel_id'])
         }
         return model
 
-    @gen.coroutine
     def list_sessions(self):
         """Returns a list of dictionaries containing all the information from
         the session database"""
@@ -234,8 +222,7 @@ class SessionManager(LoggingConfigurable):
         # which messes up the cursor if we're iterating over rows.
         for row in c.fetchall():
             try:
-                model = yield self.row_to_model(row)
-                result.append(model)
+                result.append(self.row_to_model(row))
             except KeyError:
                 pass
         return result
@@ -243,6 +230,6 @@ class SessionManager(LoggingConfigurable):
     @gen.coroutine
     def delete_session(self, session_id):
         """Deletes the row in the session database with given session_id"""
-        session = yield self.get_session(session_id=session_id)
+        session = self.get_session(session_id=session_id)
         yield gen.maybe_future(self.kernel_manager.shutdown_kernel(session['kernel']['id']))
         self.cursor.execute("DELETE FROM session WHERE session_id=?", (session_id,))

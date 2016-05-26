@@ -264,6 +264,8 @@ class NotebookWebApplication(web.Application):
         handlers.extend(load_handlers('edit.handlers'))
         handlers.extend(load_handlers('services.api.handlers'))
         handlers.extend(load_handlers('services.config.handlers'))
+        # TODO: find a hook that allows us to register our handlers first
+        handlers.extend(load_handlers('services.remotekernels.handlers'))
         handlers.extend(load_handlers('services.kernels.handlers'))
         handlers.extend(load_handlers('services.contents.handlers'))
         handlers.extend(load_handlers('services.sessions.handlers'))
