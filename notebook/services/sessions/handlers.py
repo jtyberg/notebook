@@ -113,6 +113,7 @@ class SessionHandler(APIHandler):
             # Kernel id takes precedence over name.
             if model['kernel'].get('id') is not None:
                 kernel_id = model['kernel']['id']
+                # TODO: FIXME kernel_id in kernel_manager
                 if kernel_id not in km:
                     raise web.HTTPError(400, "No such kernel: %s" % kernel_id)
                 changes['kernel_id'] = kernel_id
